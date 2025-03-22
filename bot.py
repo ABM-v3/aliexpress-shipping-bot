@@ -4,11 +4,15 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.types import ParseMode
 from aiogram.utils.executor import start_webhook
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import requests
 
 # Load environment variables
 load_dotenv()
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Initialize bot and dispatcher
 bot = Bot(token=os.getenv('BOT_TOKEN'))
@@ -22,10 +26,6 @@ logging.basicConfig(level=logging.INFO)
 WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')  # Your Vercel app URL
 WEBHOOK_PATH = f"/webhook/{os.getenv('BOT_TOKEN')}"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
-
-# Web server settings
-WEBAPP_HOST = '0.0.0.0'
-WEBAPP_PORT = int(os.getenv('PORT', 3000))
 
 # Start command handler
 @dp.message_handler(commands=['start'])
@@ -81,22 +81,19 @@ def generate_affiliate_link(url):
     # This is a placeholder, you need to implement the actual logic
     return f"{url}?affiliate_key={os.getenv('ALIEXPRESS_APP_KEY')}&affiliate_secret={os.getenv('ALIEXPRESS_APP_SECRET')}"
 
-# Webhook setup
-async def on_startup(dp):
-    logging.info("Setting webhook...")
+# Flask route to handle webhook
+@app.route(WEBHOOK_PATH, methods=['POST'])
+async def webhook():
+    update = types.Update(**request.json)
+    await dp.process_update(update)
+    return jsonify({"status": "ok"})
+
+# Set webhook on startup
+@app.route('/set_webhook', methods=['GET'])
+async def set_webhook():
     await bot.set_webhook(WEBHOOK_URL)
+    return jsonify({"status": "webhook set"})
 
-async def on_shutdown(dp):
-    logging.info("Shutting down...")
-    await bot.delete_webhook()
-    logging.info("Bye!")
-
+# Start Flask app
 if __name__ == '__main__':
-    start_webhook(
-        dispatcher=dp,
-        webhook_path=WEBHOOK_PATH,
-        on_startup=on_startup,
-        on_shutdown=on_shutdown,
-        host=WEBAPP_HOST,
-        port=WEBAPP_PORT,
-    )
+    app.run(host='0.0.0.0', port=os.getenv('PORT', 3000))
