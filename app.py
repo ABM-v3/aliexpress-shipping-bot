@@ -8,7 +8,6 @@ APP_KEY = '512082'
 APP_SECRET = '8ZR7b0XNh0DDSokcdW50ACF7yUCatSVY'
 ALIEXPRESS_API_URL = 'https://api-sg.aliexpress.com/sync'
 
-# Fetch product details from AliExpress API
 def fetch_product_details(product_url):
     try:
         params = {
