@@ -10,16 +10,20 @@ ALIEXPRESS_API_URL = 'https://api-sg.aliexpress.com/sync'
 
 # Fetch product details from AliExpress API
 def fetch_product_details(product_url):
-    params = {
-        'app_key': APP_KEY,
-        'app_secret': APP_SECRET,
-        'method': 'aliexpress.affiliate.product.detail.get',
-        'product_url': product_url,
-    }
-    response = requests.get(ALIEXPRESS_API_URL, params=params)
-    if response.status_code == 200:
+    try:
+        params = {
+            'app_key': APP_KEY,
+            'app_secret': APP_SECRET,
+            'method': 'aliexpress.affiliate.product.detail.get',
+            'product_url': product_url,
+        }
+        response = requests.get(ALIEXPRESS_API_URL, params=params)
+        response.raise_for_status()  # Raise an error for bad status codes
+        print("API Response:", response.json())  # Log the full response
         return response.json()
-    return None
+    except requests.exceptions.RequestException as e:
+        print("API Error:", e)
+        return None
 
 # Check if product supports Aliexpress Standard Shipping
 def check_standard_shipping(product_details):
